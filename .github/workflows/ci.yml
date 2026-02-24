@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: |
+          dotnet test tests/SeniorNET.Domain.Tests --no-build --configuration Release --verbosity normal
+          dotnet test tests/SeniorNET.Application.Tests --no-build --configuration Release --verbosity normal
+
+      - name: Run integration tests
+        run: dotnet test tests/SeniorNET.Integration.Tests --no-build --configuration Release --verbosity normal
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t seniornet-api:${{ github.sha }} -f src/SeniorNET.API/Dockerfile .
+
+      - name: Verify image runs
+        run: |
+          docker run -d --name test-api -p 8080:8080 \
+            -e ConnectionStrings__DefaultConnection="Host=localhost;Database=test" \
+            -e ConnectionStrings__Redis="localhost:6379" \
+            -e ConnectionStrings__RabbitMQ="amqp://localhost:5672" \
+            seniornet-api:${{ github.sha }}
+          sleep 5
+          docker logs test-api
+          docker stop test-api

@@ -1,0 +1,14 @@
+environment       = "dev"
+location          = "West Europe"
+app_service_sku   = "B1"
+acr_name          = "acrseniornet"
+image_tag         = "latest"
+db_admin_login    = "psqladmin"
+db_admin_password = "CHANGE_ME"
+db_sku            = "B_Standard_B1ms"
+db_storage_mb     = 32768
+redis_capacity    = 0
+redis_sku         = "Basic"
+rabbitmq_host     = "rabbitmq.example.com"
+rabbitmq_user     = "guest"
+rabbitmq_password = "CHANGE_ME"
